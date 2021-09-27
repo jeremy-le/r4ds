@@ -1,0 +1,44 @@
+---
+title: "Chapter 4: Workflow Basics"
+output: 
+  html_notebook:
+    toc: true
+---
+
+### 4.4.1
+> Why does this code not work?
+
+```{r, eval = FALSE}
+my_variable <- 10
+my_varıable
+#> Error in eval(expr, envir, enclos): object 'my_varıable' not found
+```
+
+`my_varıable` is mispelled.
+
+### 4.4.2
+> Tweak each of the following R commands so that they run correctly:
+
+```{r, eval = FALSE}
+library(tidyverse)
+
+ggplot(dota = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+fliter(mpg, cyl = 8)
+filter(diamond, carat > 3)
+```
+
+```{r}
+library(tidyverse)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+
+filter(mpg, cyl == 8)
+filter(diamonds, carat > 3)
+```
+### 4.4.3
+> Press Alt + Shift + K. What happens? How can you get to the same place using the menus?
+
+Displays keyboard shortcuts. `Tools -> Keyboard Shortcuts Help`
