@@ -1,0 +1,84 @@
+---
+title: "Chapter 5 exercises: Data transformation"
+output: 
+  html_notebook:
+    toc: TRUE
+---
+```{r}
+library(nycflights13)
+library(tidyverse)
+library(dplyr)
+```
+
+## 5.2 Filter rows with filter()
+
+### 5.2.1
+> Find all flights that:
+
+> 1. Had an arrival delay of two or more hours
+
+```{r}
+filter(flights, arr_delay >= 2)
+```
+> 2. Flew to Houston (IAH or HOU)
+
+```{r, eval=FALSE}
+filter(flights, dest == "IAH" | dest == "HOU")
+```  
+or  
+
+```{r, eval= TRUE}
+filter(flights, dest %in% c("IAH", "HOU"))
+```
+> 3. Were operated by United, American, or Delta  
+
+```{r}
+filter(flights, carrier %in% c("UA", "AA", "DL"))
+```
+> 4. Departed in summer (July, August, and September)
+
+```{r}
+filter(flights, month %in% c(7, 8, 9))
+```
+> 5. Arrived more than two hours late, but didn’t leave late  
+
+```{r}
+filter(flights, dep_delay <= 0 & arr_time >= 120)
+```
+> 6. Were delayed by at least an hour, but made up over 30 minutes in flight
+
+```{r}
+filter(flights, dep_delay >= 60 & dep_delay - arr_delay >30 )
+```
+> 7. Departed between midnight and 6am (inclusive)  
+
+```{r}
+summary(flights$dep_time)
+```
+
+
+```{r, eval=TRUE}
+filter(flights, dep_time %% 2400 <= 600)
+```
+### 5.2.2
+> Another useful dplyr filtering helper is `between()`. What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+
+This is a shortcut for x >= left & x <= right  
+`between(vector of values, left boundary, right boundary)`
+
+```{r, echo=TRUE}
+filter(flights, between(month, 7, 9))
+```
+### 5.2.3
+
+> How many flights have a missing `dep_time`? What other variables are missing? What might these rows represent?
+
+```{r}
+count(flights, is.na(dep_time))
+```
+
+```{r}
+summary(flights)
+```
+
+
