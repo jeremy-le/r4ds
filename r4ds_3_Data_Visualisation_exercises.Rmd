@@ -1,11 +1,8 @@
 ---
 title: 'Chapter 3: Data Visualisation'
 output:
-  html_document:
+  html_notebook:
     toc: yes
-editor_options: 
-  markdown: 
-    wrap: sentence
 ---
 
 ```{r include=FALSE}
