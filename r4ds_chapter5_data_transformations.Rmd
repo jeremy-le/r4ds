@@ -5,16 +5,16 @@ output:
     toc: TRUE
 ---
 
-# Introduction
+## 5.1 Introduction
 
-## 5.1.1 Prerequisites
+### 5.1.1 Prerequisites
 
 ```{r}
 library(tidyverse)
 library(nycflights13)
 ```
 
-## 5.1.2 nycflights13
+### 5.1.2 nycflights13
 
 ```{r}
 flights
@@ -32,7 +32,7 @@ Tibbles are data frames, tweaked to work better in the `tidyverse.` To view the 
 -   `fctr` factors, categorical variables with fixed values
 -   `date` dates
 
-## 5.1.3 dyplr basics
+### 5.1.3 dyplr basics
 
 #### Key dyplr functions:
 
@@ -43,7 +43,7 @@ Tibbles are data frames, tweaked to work better in the `tidyverse.` To view the 
 -   `summarise()` collapse many values down\
     First argument is always the dataframe
 
-# 5.2 filter()
+## 5.2 filter()
 
 Filter flights on January 1st:
 
@@ -57,7 +57,7 @@ To save the result, use the assignment operator `<-`
 jan1 <-  filter(flights, month == 1, day == 1)
 ```
 
-## 5.2.1 Comparisons
+### 5.2.1 Comparisons
 
 Use `near()` instead of `==` when comparing floating point numbers.
 
@@ -66,7 +66,7 @@ sqrt(2) ^ 2 == 2
 near(sqrt(2) ^ 2, 2)
 ```
 
-## 5.2.2 Logical operators
+### 5.2.2 Logical operators
 
 -   `&` "and"
 -   `|` "or"
@@ -85,7 +85,7 @@ filter(flights, month %in% c(11, 12))
 - `!(x & y)` is the same as `!x | !y`
 - `!(x | y)` is the same as `!x & !y`
 
-## 5.2.3 Missing values
+### 5.2.3 Missing values
 
 `NA` stands for "not availables" and represent unknown/missing values. Any operation with an unknown value will also be unknown.  
 `is.na()` is used to determine if a value is missing.  
@@ -97,3 +97,163 @@ filter(df, x > 1)
 filter(df, is.na(x) | x > 1)
 
 ```
+## 5.3 Arrange rows with arrange()
+
+### 5.3.1  
+
+`arrange()` arranges columns in ascending order by default. Additional column names are used to break ties in values in preceding columns.
+```{r}
+arrange(flights, year, month, day)
+```
+`desc()` arranges in descending order. Missing values are always sorted at the end.
+```{r}
+arrange(flights, desc(dep_delay))
+```
+
+## 5.4 Select columns with select()
+
+`select(flights, year, month, day)`  
+`select(flights, year:day)`  
+```{r}
+select(flights, -(dep_time:time_hour))
+```
+These all result in the same tables.  
+
+There are a number of helper functions you can use within select():  
+* `starts_with("abc")`
+* `ends_with("xyz"`)
+* `contains("ijk")`
+* `matches("(.)\\1")`: regular expressions
+* `num_range("x", 1:3)`: `x1`, `x2`, `x3`  
+
+You can rename variables with `rename()`. Be careful of `new_name = old_name` syntax
+```{r}
+(renamed_flights <- dplyr::rename(flights, Y = year, M = month, D = day))
+```
+
+A neat trick is to use select() with everything() helper to move variables to the start of the data frame.
+```{r}
+select(flights, time_hour, air_time, everything())
+```
+## 5.4 Add new variables with `mutate()`
+
+* `mutate()` adds new columns to the end that are functions of existing columns
+
+```{r}
+flights_sml <- select(flights, 
+  year:day, 
+  ends_with("delay"), 
+  distance, 
+  air_time
+  )
+
+mutate(flights_sml,
+  gain = dep_delay - arr_delay,
+  hours = air_time / 60,
+  gain_per_hour = gain / hours
+)
+
+```
+* `transmute()` works the same but only selects new columns.
+
+### 5.5.1 Useful creation functions
+
+* Arithmatic operators: `+`, `-`, `/`, `^`
+* Modular arithmetic: `%/%`, `%%`
+* Logs: `log()`, `log2()`, `log10()`
+* Offsets: `lead()`, `lag()`
+* Cumulative and rolling aggregates: `cumsum()`, `cumprod()`, `cummin()`, `cummax()`
+* Logical comparisons: `<`, `<=`, `>=`, `!=`, `==`
+* Ranking: `min_rank()`, `min_rank(desc())`
+
+## 5.6 Grouped summaries with `summarise()`
+
+> `summarise()` collapses a data frame into a single row.
+> `group_by()` changes unit of analysis from complete dataset to individual groups
+
+```{r}
+group_by(iris, Species) %>% 
+  summarise(irismean = mean(Sepal.Length))
+```
+
+### 5.6.1 Combining multiple operations with the pipe `%>%`
+
+> The `%>%` improves readability of code left to right, top to bottom. It can be thought of as 'then'. Shortcut: CTRL + SHIFT + M
+
+```{r}
+delays <- flights %>% 
+  group_by(dest) %>% 
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)
+  ) %>% 
+  filter(count > 20, dest != "HNL")
+
+ggplot(data = delays, mapping = aes(x = dist, y = delay)) +
+  geom_point(aes(size = count), alpha = 1/3) +
+  geom_smooth(se = FALSE)
+```
+### 5.6.2 Missing values
+
+> The `na.rm` argument in aggregation functions removes missing values. Inputting missing values into aggregation functions will output missing values.
+
+```{r}
+# Let's remove cancelled flights
+not_cancelled <- flights %>% 
+  filter(!is.na(dep_delay), !is.na(arr_delay))
+
+not_cancelled %>% 
+  group_by(month) %>% 
+  summarise(mean(dep_delay))
+```
+### 5.6.3 Counts `n()`
+
+> Whenever you do any aggregation, it’s always a good idea to include either a count (`n()`), or a count of non-missing values (`sum(!is.na(x))`).
+
+From the previous example: 
+
+```{r}
+flights %>%  # declare the data frame
+  filter(!is.na(dep_delay), !is.na(arr_delay)) %>%  # filter out missing values
+  group_by(month) %>% # group by month
+  summarise(n_months = n(), sum_month = sum(month), delay_mean =  mean(dep_delay))
+```
+### 5.6.4 Useful summary functions
+
+- Measures of location: `mean(x)`, `median(x)`
+- Measures of spread: `sd(x)`, `TQR(x)`, `mad(x)`
+- Measures of rank: `min(x)`, `quantile(x, 0.25)`, `max(x)`
+- Measures of position: `first(x)`, `nth(x, 2)`, `last(x)`
+- Counts: `n()`, `sum(!is.na(x))`, `n_distinct(x)`
+- Counts and proportions of logical values: `sum(x > 10)` gives number of TRUEs in x, `mean(y == 0)` gives the proportion
+
+### 5.6.5 Grouping by multiple variables
+
+Make it easier to progressively roll up a dataset by grouping by multiple variables.
+```{r}
+daily <- group_by(flights, year, month, day)
+
+(per_day <- summarise(daily, flights = n()))
+(per_month <- summarise(per_day, flights = sum(flights)))
+(per_year <- summarise(per_month, flights = sum(flights)))
+```
+### 5.6.6 Ungrouping
+
+```{r}
+(daily_ungrouped <- daily %>% 
+  ungroup() %>% 
+  summarise(flights = n()))
+```
+
+
+## 5.7 Grouped mutates (and filters)
+
+###
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  filter(n() > 10000)
+```
+
